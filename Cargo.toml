@@ -1,0 +1,19 @@
+[package]
+name = "cms"
+version = "0.1.0"
+authors = ["m-m-adams <52469396+m-m-adams@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ahash = "0.7.2"
+rand = "0.8.3"
+
+[lib]
+name = "count_min_sketch"
+crate-type = ["cdylib"]
+
+[dependencies.pyo3]
+version = "0.14.5"
+features = ["extension-module"]
