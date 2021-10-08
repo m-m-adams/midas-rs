@@ -7,7 +7,7 @@ use rand;
 //use std::error::Error;
 
 #[derive(Clone)]
-struct Row<T: Hash + Copy> {
+struct Row<T: Hash + Clone> {
     data: Vec<u64>,
     width: u64,
     a: u128,
@@ -15,7 +15,7 @@ struct Row<T: Hash + Copy> {
     p: PhantomData<T>,
 }
 
-impl<T: Hash + Copy> Row<T> {
+impl<T: Hash + Clone> Row<T> {
     fn new(w: u64) -> Row<T> {
         let a = rand::random::<u128>();
         let b = rand::random::<u128>();
@@ -80,13 +80,13 @@ impl<T: Hash + Copy> Row<T> {
 }
 /// CMS is a count-min-sketch streaming data structure
 #[derive(Clone)]
-pub struct CMS<T: Hash + Copy> {
+pub struct CMS<T: Hash + Clone> {
     rows: Vec<Row<T>>,
     width: u64,
     depth: u64,
 }
 
-impl<T: Hash + Copy> CMS<T> {
+impl<T: Hash + Clone> CMS<T> {
     ///new creates a new CMS struct
     pub fn new(depth: u64, width: u64) -> CMS<T> {
         Self {
@@ -116,12 +116,20 @@ impl<T: Hash + Copy> CMS<T> {
 
     ///insert a new value or increase the count of an existing one
     pub fn insert(&mut self, t: T) -> u64 {
-        self.rows.iter_mut().map(|row| row.insert(t)).min().unwrap()
+        self.rows
+            .iter_mut()
+            .map(|row| row.insert(t.clone()))
+            .min()
+            .unwrap()
     }
     ///retrieve the estimated count for a value
     pub fn retrieve(&self, t: T) -> u64 {
         //note - this can never panic, there is guaranteed to be data
-        self.rows.iter().map(|row| row.retrieve(t)).min().unwrap()
+        self.rows
+            .iter()
+            .map(|row| row.retrieve(t.clone()))
+            .min()
+            .unwrap()
     }
     ///clear out the structure
     pub fn clear(&mut self) {
@@ -141,7 +149,7 @@ impl<T: Hash + Copy> CMS<T> {
 }
 
 #[pyclass]
-pub struct PyCMS(CMS<(u32, u32)>);
+pub struct PyCMS(CMS<i64>);
 
 #[pymethods]
 impl PyCMS {
@@ -149,10 +157,10 @@ impl PyCMS {
     fn new(tol: f64, err: f64, capacity: usize) -> Self {
         PyCMS(CMS::new_with_probs(tol, err, capacity))
     }
-    fn insert(&mut self, edge: (u32, u32)) -> u64 {
+    fn insert(&mut self, edge: i64) -> u64 {
         self.0.insert(edge)
     }
-    fn retrieve(&mut self, edge: (u32, u32)) -> u64 {
+    fn retrieve(&mut self, edge: i64) -> u64 {
         self.0.retrieve(edge)
     }
     fn clear(&mut self) {
