@@ -61,10 +61,6 @@ impl<T: Hash + Clone> Row<T> {
 
     fn combine(&mut self, other: &Row<T>) -> Result<(), Error> {
         if other.a != self.a {
-            println!(
-                "errored!\nself: {},{}\nother: {},{}",
-                self.a, self.b, other.a, other.b
-            );
             let custom_error = Error::new(
                 ErrorKind::Other,
                 "hash init parameters don't match - was one CMS cloned from the other?",
@@ -74,10 +70,7 @@ impl<T: Hash + Clone> Row<T> {
         for i in 0..self.width as usize {
             self.data[i] = self.data[i] + other.data[i];
         }
-        println!(
-            "Did not error\nself: {},{}\nother: {},{}",
-            self.a, self.b, other.a, other.b
-        );
+
         Ok(())
     }
 }
