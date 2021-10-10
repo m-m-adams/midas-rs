@@ -157,11 +157,13 @@ impl PyCMS {
     fn new(tol: f64, err: f64, capacity: usize) -> Self {
         PyCMS(CMS::new_with_probs(tol, err, capacity))
     }
-    fn insert(&mut self, edge: i64) -> u64 {
-        self.0.insert(edge)
+    fn insert(&mut self, edge: PyObject, py: Python) -> PyResult<u64> {
+        let hash: i64 = edge.call_method0(py, "__hash__")?.extract(py)?;
+        Ok(self.0.insert(hash))
     }
-    fn retrieve(&mut self, edge: i64) -> u64 {
-        self.0.retrieve(edge)
+    fn retrieve(&mut self, edge: PyObject, py: Python) -> PyResult<u64> {
+        let hash: i64 = edge.call_method0(py, "__hash__")?.extract(py)?;
+        Ok(self.0.retrieve(hash))
     }
     fn clear(&mut self) {
         self.0.clear()
