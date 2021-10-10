@@ -12,7 +12,7 @@ rand = "0.8.3"
 
 [lib]
 name = "count_min_sketch"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies.pyo3]
 version = "0.14.5"
