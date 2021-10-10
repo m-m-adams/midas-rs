@@ -76,15 +76,15 @@ impl<T: Hash + Clone> Row<T> {
 }
 /// CMS is a count-min-sketch streaming data structure
 #[derive(Clone)]
-pub struct CMS<T: Hash + Clone> {
+pub struct CountMinSketch<T: Hash + Clone> {
     rows: Vec<Row<T>>,
     width: u64,
     depth: u64,
 }
 
-impl<T: Hash + Clone> CMS<T> {
+impl<T: Hash + Clone> CountMinSketch<T> {
     ///new creates a new CMS struct
-    pub fn new(depth: u64, width: u64) -> CMS<T> {
+    pub fn new(depth: u64, width: u64) -> CountMinSketch<T> {
         Self {
             rows: (0..depth).map(|_| Row::new(width)).collect(),
             width,
@@ -93,14 +93,14 @@ impl<T: Hash + Clone> CMS<T> {
     }
     ///new_with_probs creates a new CMS s.t. error is less
     ///than tol with probability 1-p_err for capacity unique entries
-    pub fn new_with_probs(tol: f64, p_err: f64, capacity: usize) -> CMS<T> {
+    pub fn new_with_probs(tol: f64, p_err: f64, capacity: usize) -> CountMinSketch<T> {
         let width = (1.0f64.exp() / (tol / capacity as f64)) as u64;
         let depth = (1.0 / p_err).ln() as u64;
         Self::new(depth, width)
     }
     ///new_from_cms generates a new CMS matching an existing one
     ///this allows combining counts from different CMS structures
-    pub fn new_from_cms(other: &CMS<T>) -> CMS<T> {
+    pub fn new_from_cms(other: &CountMinSketch<T>) -> CountMinSketch<T> {
         let mut n = other.clone();
         n.clear();
         n
@@ -132,7 +132,7 @@ impl<T: Hash + Clone> CMS<T> {
         self.rows.iter_mut().for_each(|row| row.scale(factor));
     }
     ///combine the CMS with another one (must be a clone or built with new_from)
-    pub fn combine(&mut self, other: &CMS<T>) -> Result<(), Error> {
+    pub fn combine(&mut self, other: &CountMinSketch<T>) -> Result<(), Error> {
         self.rows
             .iter_mut()
             .zip(other.rows.iter())
@@ -190,7 +190,7 @@ mod tests {
     }
     #[test]
     fn test_cms_add_retrieve() {
-        let mut cms: CMS<u64> = CMS::new(1000, 1000);
+        let mut cms: CountMinSketch<u64> = CountMinSketch::new(1000, 1000);
         for i in 1..1001 {
             assert_eq!(i, cms.insert(10))
         }
@@ -198,7 +198,7 @@ mod tests {
     }
     #[test]
     fn test_cms_add_retrieve_mult() {
-        let mut cms: CMS<u64> = CMS::new_with_probs(0.1, 0.00001, 100);
+        let mut cms: CountMinSketch<u64> = CountMinSketch::new_with_probs(0.1, 0.00001, 100);
         for i in 0..1_000_000 {
             cms.insert(i % 100);
         }
@@ -207,7 +207,7 @@ mod tests {
     }
     #[test]
     fn test_cms_clear() {
-        let mut cms: CMS<u64> = CMS::new(1000, 1000);
+        let mut cms: CountMinSketch<u64> = CountMinSketch::new(1000, 1000);
         for i in 0..100 {
             cms.insert(i);
         }
@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn test_cms_scale() {
-        let mut cms: CMS<u64> = CMS::new_with_probs(0.1, 0.00001, 100);
+        let mut cms: CountMinSketch<u64> = CountMinSketch::new_with_probs(0.1, 0.00001, 100);
         for _ in 0..100 {
             cms.insert(0);
         }
@@ -227,8 +227,8 @@ mod tests {
     }
     #[test]
     fn test_cms_combine() {
-        let mut cms_a: CMS<u64> = CMS::new_with_probs(0.1, 0.00001, 100);
-        let mut cms_b: CMS<u64> = CMS::new_with_probs(0.1, 0.00001, 100);
+        let mut cms_a: CountMinSketch<u64> = CountMinSketch::new_with_probs(0.1, 0.00001, 100);
+        let mut cms_b: CountMinSketch<u64> = CountMinSketch::new_with_probs(0.1, 0.00001, 100);
         let mut cms_c = cms_a.clone();
         for _ in 0..100 {
             cms_a.insert(10);

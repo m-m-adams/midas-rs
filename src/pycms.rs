@@ -3,13 +3,13 @@ use pyo3::prelude::*;
 
 #[pyclass]
 #[derive(Clone)]
-pub struct PyCMS(CMS<i64>);
+pub struct CMS(CountMinSketch<i64>);
 
 #[pymethods]
-impl PyCMS {
+impl CMS {
     #[new]
     fn new(tol: f64, err: f64, capacity: usize) -> Self {
-        PyCMS(CMS::new_with_probs(tol, err, capacity))
+        CMS(CountMinSketch::new_with_probs(tol, err, capacity))
     }
     fn insert(&mut self, edge: PyObject, py: Python) -> PyResult<u64> {
         let hash: i64 = edge.call_method0(py, "__hash__")?.extract(py)?;
@@ -26,18 +26,18 @@ impl PyCMS {
         self.0.scale(factor)
     }
 
-    fn combine(&mut self, other: PyCMS) -> PyResult<()> {
+    fn combine(&mut self, other: CMS) -> PyResult<()> {
         Ok(self.0.combine(&other.0)?)
     }
 }
 
 #[pymodule]
 fn count_min_sketch(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyCMS>()?;
+    m.add_class::<CMS>()?;
 
     #[pyfn(m)]
-    fn clone_cms(base: PyCMS) -> PyCMS {
-        PyCMS(CMS::new_from_cms(&base.0))
+    fn clone_cms(base: CMS) -> CMS {
+        CMS(CountMinSketch::new_from_cms(&base.0))
     }
 
     Ok(())
