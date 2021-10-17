@@ -8,8 +8,8 @@ pub struct CMS(CountMinSketch<i64>);
 #[pymethods]
 impl CMS {
     #[new]
-    fn new(tol: f64, err: f64, capacity: usize) -> Self {
-        CMS(CountMinSketch::new_with_probs(tol, err, capacity))
+    fn new(depth: u64, width: u64) -> Self {
+        CMS(CountMinSketch::new(depth, width))
     }
     fn insert(&mut self, edge: PyObject, py: Python) -> PyResult<u64> {
         let hash: i64 = edge.call_method0(py, "__hash__")?.extract(py)?;
