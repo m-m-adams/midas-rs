@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use ahash::AHasher;
 use rand;
+use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io::{Error, ErrorKind};
 use std::marker::PhantomData;
@@ -77,9 +78,10 @@ impl<T: Hash + Clone> Row<T> {
 /// CMS is a count-min-sketch streaming data structure
 #[derive(Clone)]
 pub struct CountMinSketch<T: Hash + Clone> {
-    rows: Vec<Row<T>>,
+    rows: Vec<Row<u64>>,
     width: u64,
     depth: u64,
+    p: PhantomData<T>,
 }
 
 impl<T: Hash + Clone> CountMinSketch<T> {
@@ -89,6 +91,7 @@ impl<T: Hash + Clone> CountMinSketch<T> {
             rows: (0..depth).map(|_| Row::new(width)).collect(),
             width,
             depth,
+            p: PhantomData,
         }
     }
     ///new_with_probs creates a new CMS s.t. error is less
@@ -108,20 +111,18 @@ impl<T: Hash + Clone> CountMinSketch<T> {
 
     ///insert a new value or increase the count of an existing one
     pub fn insert(&mut self, t: T) -> u64 {
-        self.rows
-            .iter_mut()
-            .map(|row| row.insert(t.clone()))
-            .min()
-            .unwrap()
+        let mut s = DefaultHasher::new();
+        t.hash(&mut s);
+        let v = s.finish();
+        self.rows.iter_mut().map(|row| row.insert(v)).min().unwrap()
     }
     ///retrieve the estimated count for a value
     pub fn retrieve(&self, t: T) -> u64 {
+        let mut s = DefaultHasher::new();
+        t.hash(&mut s);
+        let v = s.finish();
         //note - this can never panic, there is guaranteed to be data
-        self.rows
-            .iter()
-            .map(|row| row.retrieve(t.clone()))
-            .min()
-            .unwrap()
+        self.rows.iter().map(|row| row.retrieve(v)).min().unwrap()
     }
     ///clear out the structure
     pub fn clear(&mut self) {

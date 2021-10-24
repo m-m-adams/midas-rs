@@ -1,4 +1,6 @@
 import count_min_sketch
+import time
+from typing import *
 from sklearn.metrics import roc_auc_score
 
 
@@ -9,6 +11,29 @@ class CMSCounter:
         self.timestamp = 0
 
     def add(self, edge, time):
+        h = hash(edge)
+        if time > self.timestamp:
+            self.roll_time(time)
+        nc = self.current.insert(h)
+        nt = self.total.insert(h)
+        return self.score(nc, nt, time)
+
+    def roll_time(self, time):
+        self.current.clear()
+        self.timestamp = time
+
+    def score(self, a, s, t):
+        return 0 if s == 0 or t == 1 else pow((a - s / t) * t, 2) / (s * (t - 1))
+
+
+class MidasR:
+    def __init__(self, nrows: int, ncolumns: int):
+        self.source = CMSCounter(nrows, ncolumns)
+        self.dest = CMSCounter(nrows, ncolumns)
+        self.combined = CMSCounter(nrows, ncolumns)
+        self.timestamp = 0
+
+    def add(self, edge: Tuple[int, int], time: int):
         if time > self.timestamp:
             self.roll_time(time)
         nc = self.current.insert(edge)
@@ -32,17 +57,18 @@ if __name__ == "__main__":
 
     with open('./midas/darpa_ground_truth.csv', 'r') as f:
         truth = f.readlines()
-
+    start = time.time()
     print("scoring")
     output = []
     for line in lines:
         (s, d, t) = [int(item.strip()) for item in line.split(',')]
 
         score = counter.add((s, d), t)
-        output.append((s, d, t, score))
-        # print(output[-1])
+        output.append(score)
+    end = time.time()
+    print(f"ROC-AUC = {roc_auc_score(truth, output):.4f}\n in {end-start}s")
 
     print("writing")
-    with open('darpa_scored.csv', 'w+') as fout:
-        for (s, d, t, score) in output:
+    with open('./midas/darpa_scored.csv', 'w') as fout:
+        for score in output:
             fout.write(f"{score}\n")
