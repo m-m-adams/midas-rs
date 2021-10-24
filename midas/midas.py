@@ -18,8 +18,8 @@ class CMSCounter:
         nt = self.total.insert(h)
         return self.score(nc, nt, time)
 
-    def roll_time(self, time):
-        self.current.clear()
+    def roll_time(self, time, scale=0):
+        self.current.scale(scale)
         self.timestamp = time
 
     def score(self, a, s, t):
@@ -46,16 +46,16 @@ class MidasR:
 
         return max(s_s, s_d, s_c)
 
-    def roll_time(self, time):
-        self.source.roll_time(time)
-        self.dest.roll_time(time)
-        self.combined.roll_time(time)
+    def roll_time(self, time, scale=0.5):
+        self.source.roll_time(time, scale)
+        self.dest.roll_time(time, scale)
+        self.combined.roll_time(time, scale)
         self.timestamp = time
 
 
 if __name__ == "__main__":
 
-    counter = MidasR(2, 1024)
+    counter = MidasR(20, 1024)
     print("reading")
     with open('./midas/darpa_processed.csv', 'r') as f:
         lines = f.readlines()
