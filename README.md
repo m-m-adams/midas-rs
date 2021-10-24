@@ -1,6 +1,7 @@
 # Midas-RS
 This is a rust backed python program implementing the relational, filtering and normal core from MIDAS
 
+```
 usage: midas.py [-h] [-o OUTPUT] [-t {R,r,N,f,n,F}] [-s SCALE] FILE FILE
 
 positional arguments:
@@ -15,6 +16,7 @@ options:
                         choice of core type. R for relational, F for filtering, N for normal
   -s SCALE, --scale SCALE
                         Factor to decay current time counter by in filtering and relational core
+```
 
 Runtime is approximately 6-20 seconds on the DARPA dataset depending on core option, a 4-5x speedup over pure python.
 
