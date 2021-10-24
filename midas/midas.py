@@ -36,21 +36,26 @@ class MidasR:
     def add(self, edge: Tuple[int, int], time: int):
         if time > self.timestamp:
             self.roll_time(time)
-        nc = self.current.insert(edge)
-        nt = self.total.insert(edge)
-        return self.score(nc, nt, time)
+
+        source = edge[0]
+        dest = edge[1]
+
+        s_s = self.source.add(source, time)
+        s_d = self.dest.add(dest, time)
+        s_c = self.combined.add(edge, time)
+
+        return max(s_s, s_d, s_c)
 
     def roll_time(self, time):
-        self.current.clear()
+        self.source.roll_time(time)
+        self.dest.roll_time(time)
+        self.combined.roll_time(time)
         self.timestamp = time
-
-    def score(self, a, s, t):
-        return 0 if s == 0 or t == 1 else pow((a - s / t) * t, 2) / (s * (t - 1))
 
 
 if __name__ == "__main__":
 
-    counter = CMSCounter(2, 1024)
+    counter = MidasR(2, 1024)
     print("reading")
     with open('./midas/darpa_processed.csv', 'r') as f:
         lines = f.readlines()
