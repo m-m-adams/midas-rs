@@ -55,12 +55,12 @@ class MidasR:
 
 if __name__ == "__main__":
 
-    counter = MidasR(20, 1024)
+    counter = MidasR(20, 2048)
     print("reading")
-    with open('./midas/darpa_processed.csv', 'r') as f:
+    with open('./darpa_processed.csv', 'r') as f:
         lines = f.readlines()
 
-    with open('./midas/darpa_ground_truth.csv', 'r') as f:
+    with open('./darpa_ground_truth.csv', 'r') as f:
         truth = f.readlines()
     start = time.time()
     print("scoring")
@@ -74,6 +74,6 @@ if __name__ == "__main__":
     print(f"ROC-AUC = {roc_auc_score(truth, output):.4f}\n in {end-start}s")
 
     print("writing")
-    with open('./midas/darpa_scored.csv', 'w') as fout:
+    with open('./darpa_scored.csv', 'w') as fout:
         for score in output:
             fout.write(f"{score}\n")

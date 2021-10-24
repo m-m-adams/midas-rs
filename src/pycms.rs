@@ -8,6 +8,7 @@ pub struct CMS(CountMinSketch<isize>);
 struct Edge(isize);
 
 impl<'source> FromPyObject<'source> for Edge {
+    //attempt to convert directly to an isize and call hash if it fails
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         let tryint: Result<isize, PyErr> = ob.extract();
         match tryint {
@@ -27,9 +28,6 @@ impl CMS {
         CMS(CountMinSketch::new(depth, width))
     }
     fn insert(&mut self, e: Edge) -> PyResult<u64> {
-        //let hash: i64 = edge.call_method0(py, "__hash__")?.extract(py)?;
-
-        //let hash: i64 = edge.extract();
         Ok(self.0.insert(e.0))
     }
     fn retrieve(&mut self, e: Edge) -> PyResult<u64> {
@@ -38,6 +36,7 @@ impl CMS {
     fn clear(&mut self) {
         self.0.clear()
     }
+    //multiply the cms by factor
     fn scale(&mut self, factor: f64) {
         self.0.scale(factor)
     }
