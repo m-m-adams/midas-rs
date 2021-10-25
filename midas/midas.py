@@ -71,7 +71,7 @@ if __name__ == "__main__":
     scores = counter.run(edges)
     end = time.time()
 
-    print(f"ROC-AUC = {roc_auc_score(truth, scores):.4f}\n in {end-start}s")
+    print(f"ROC-AUC = {roc_auc_score(truth, scores):.4f}\n\tin {end-start}s")
 
     if len(args["output"]) > 1:
         print("writing")
