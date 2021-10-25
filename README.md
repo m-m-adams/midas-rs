@@ -17,6 +17,7 @@ options:
   -s SCALE, --scale SCALE
                         Factor to decay current time counter by in filtering and relational core
 ```
+To install, first install rust/cargo, then clone the repo and install with pip (```pip install .```)
 
 Runtime is approximately 6-20 seconds on the DARPA dataset depending on core option, a 4-5x speedup over pure python.
 
