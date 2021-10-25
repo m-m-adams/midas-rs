@@ -2,7 +2,7 @@
 name = "cms"
 version = "1.0.0"
 authors = ["m-m-adams <52469396+m-m-adams@users.noreply.github.com>"]
-edition = "2021"
+edition = "2018"
 readme = "README.md"
 description = "A fast CMS streaming data structure implemented in rust"
 repository = "https://github.com/m-m-adams/count_min_sketch"
