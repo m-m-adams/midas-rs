@@ -53,16 +53,16 @@ def write_scores(output_file: str, output: list[float]):
 if __name__ == "__main__":
     args = parse_input()
 
-    match args["type"].lower():
-        case "r":
-            print("Using relational core")
-            counter = MidasR(20, 2048, args["scale"])
-        case "f":
-            print("Using filtering core")
-            counter = CMSCounter(20, 2048, args["scale"])
-        case _:
-            print("Using normal core")
-            counter = CMSCounter(20, 2048)
+    t = args["type"].lower()
+    if t == "r":
+        print("Using relational core")
+        counter = MidasR(20, 2048, args["scale"])
+    elif t == "f":
+        print("Using filtering core")
+        counter = CMSCounter(20, 2048, args["scale"])
+    else:
+        print("Using normal core")
+        counter = CMSCounter(20, 2048)
     print("reading")
     edges, truth = read_data(args["input"], args["labels"])
 
