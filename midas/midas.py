@@ -5,6 +5,7 @@ from typing import *
 from sklearn.metrics import roc_auc_score
 from argparse import ArgumentParser
 from midas_cores import CMSCounter, MidasR
+from online_autoencoder import lstmautoencoder
 
 
 def parse_input() -> Dict:
@@ -20,7 +21,7 @@ def parse_input() -> Dict:
     parser.add_argument("-t", "--type",
                         dest="type",
                         default="R",
-                        choices={"R", "r", "F", "f", "N", "n"},
+                        choices={"R", "r", "F", "f", "N", "n", "auto"},
                         help="choice of cores. Choice of R for relational, F for filtering, N for normal")
 
     parser.add_argument(
@@ -33,12 +34,12 @@ def parse_input() -> Dict:
 def read_data(input: str, labels: str) -> Tuple[list[Tuple[int, int, int]], list[str]]:
 
     edges = []
-    with open(args["input"], 'r') as f:
+    with open(input, 'r') as f:
         for line in f.readlines():
             (s, d, t) = [int(item.strip()) for item in line.split(',')]
             edges.append((s, d, t))
 
-    with open(args["labels"], 'r') as f:
+    with open(labels, 'r') as f:
         truth = f.readlines()
     return edges, truth
 
@@ -56,19 +57,21 @@ if __name__ == "__main__":
     t = args["type"].lower()
     if t == "r":
         print("Using relational core")
-        counter = MidasR(20, 2048, args["scale"])
+        model = MidasR(20, 2048, args["scale"])
     elif t == "f":
         print("Using filtering core")
-        counter = CMSCounter(20, 2048, args["scale"])
+        model = CMSCounter(20, 2048, args["scale"])
+    elif t == "auto":
+        model = lstmautoencoder()
     else:
         print("Using normal core")
-        counter = CMSCounter(20, 2048)
+        model = CMSCounter(20, 2048)
     print("reading")
     edges, truth = read_data(args["input"], args["labels"])
 
     start = time.time()
     print("scoring")
-    scores = counter.run(edges)
+    scores = model.run(edges)
     end = time.time()
 
     print(f"ROC-AUC = {roc_auc_score(truth, scores):.4f}\n\tin {end-start}s")
