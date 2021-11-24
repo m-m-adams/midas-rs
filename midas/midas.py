@@ -35,11 +35,13 @@ def read_data(input: str, labels: str) -> Tuple[list[Tuple[int, int, int]], list
 
     edges = []
     with open(input, 'r') as f:
+        next(f)
         for line in f.readlines():
             (s, d, t) = [int(item.strip()) for item in line.split(',')]
             edges.append((s, d, t))
 
     with open(labels, 'r') as f:
+        next(f)
         truth = f.readlines()
     return edges, truth
 
