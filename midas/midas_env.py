@@ -1,80 +1,92 @@
 import numpy as np
 import torch
+import unittest
 from midas import read_data
 from midas_cores import MidasR
 
 
-class RandomWalkEnvironment():
-    def env_init(self, edges_path: str, label_path: str, env_info={}):
+class MidasEnv():
+    def __init__(self, edges: list[tuple[int, int, int]], env_info={}):
 
         # set random seed for each run
 
         self.rand_generator = np.random.RandomState(env_info.get("seed"))
-        self.edges, self.truth = read_data(
-            edges_path, label_path)
+        self.decay = env_info.get("decay")
+        self.edges = edges
         self.midas = MidasR(20, 2048)
+        self.i = 0
 
     def env_start(self):
 
         # set self.reward_state_term tuple
         reward = 0.0
 
-        nodes = self.edges[0]
-        scores = self.midas(nodes)
-        state = torch.tensor(nodes+scores)
-        is_terminal = False
-
-        self.reward_state_term = (reward, state, is_terminal)
+        (s, d, t) = self.edges[self.i]
+        scores = self.midas.run_one((s, d), t)
+        state = [0]
+        state.extend(scores)
+        state = torch.FloatTensor(state)
+        self.is_terminal = False
+        self.state = state
+        self.i += 1
 
         # return first state from the environment
-        return self.reward_state_term[1]
+        return self.state
 
-    def env_step(self, action):
-        """A step taken by the environment.
+    def reward(self) -> float:
+        scores = self.state[1:]
+        count = self.state[0]
+        return max(scores)/count
 
-        Args:
-            action: The action taken by the agent
+    def step(self, action: int):
+        state = [self.state[0]*self.decay+action]
 
-        Returns:
-            (float, state, Boolean): a tuple of the reward, state,
-                and boolean indicating if it's terminal.
-        """
+        (s, d, t) = self.edges[self.i]
+        scores = self.midas.run_one((s, d), t)
+        state.extend(scores)
 
-        last_state = self.reward_state_term[1]
+        self.state = state
 
-        # set reward, current_state, and is_terminal
-        #
-        # action: specifies direction of movement - 0 (indicating left) or 1 (indicating right)  [int]
-        # current state: next state after taking action from the last state [int]
-        # reward: -1 if terminated left, 1 if terminated right, 0 otherwise [float]
-        # is_terminal: indicates whether the episode terminated [boolean]
-        #
-        # Given action (direction of movement), determine how much to move in that direction from last_state
-        # All transitions beyond the terminal state are absorbed into the terminal state.
+        self.i += 1
 
-        if action == 0:  # left
-            current_state = max(self.left_terminal_state, last_state +
-                                self.rand_generator.choice(range(-100, 0)))
-        elif action == 1:  # right
-            current_state = min(
-                self.right_terminal_state, last_state + self.rand_generator.choice(range(1, 101)))
-        else:
-            raise ValueError("Wrong action value")
+        return self.reward(), self.state
 
-        # terminate left
-        if current_state == self.left_terminal_state:
-            reward = -1.0
-            is_terminal = True
 
-        # terminate right
-        elif current_state == self.right_terminal_state:
-            reward = 1.0
-            is_terminal = True
+class TestEnv(unittest.TestCase):
 
-        else:
-            reward = 0.0
-            is_terminal = False
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        edges, truth = read_data(
+            './data/darpa_processed.csv', './data/darpa_ground_truth.csv')
+        env_info = {
+            "seed": 0,
+            "decay": 0.6,
+        }
+        self. env = MidasEnv(edges, env_info)
 
-        self.reward_state_term = (reward, current_state, is_terminal)
+    def test_init(self):
 
-        return self.reward_state_term
+        self.assertEqual(self.env.edges[0], (7577, 9765, 1))
+
+    def test_start(self):
+        s = self.env.env_start()
+        e = torch.tensor([0, 0, 0, 0])
+        r = ((s-e)**2).mean().numpy()
+        self.assertAlmostEqual(r, 0)
+
+    def test_flag(self):
+        self.env.env_start()
+        self.env.step(0)
+
+        r, s = self.env.step(1)
+        self.assertAlmostEqual(r.numpy(), 1)
+
+        r, s = self.env.step(1)
+        self.assertAlmostEqual(r.numpy(), 1.25)
+
+        r, s = self.env.step(1)
+        self.assertAlmostEqual(r.numpy(), 1.02, 3)
+
+
+if __name__ == '__main__':
+    unittest.main()

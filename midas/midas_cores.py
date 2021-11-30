@@ -40,6 +40,10 @@ class MidasR:
         self.timestamp = 0
 
     def add(self, edge: Tuple[int, int], time: int) -> float:
+
+        return max(self.add_all(edge, time))
+
+    def add_all(self, edge: Tuple[int, int], time: int) -> Tuple[float, float, float]:
         if time > self.timestamp:
             self.roll_time(time)
 
@@ -49,8 +53,7 @@ class MidasR:
         s_s = self.source.add(source, time)
         s_d = self.dest.add(dest, time)
         s_c = self.combined.add(edge, time)
-
-        return max(s_s, s_d, s_c)
+        return (s_s, s_d, s_c)
 
     def roll_time(self, time):
         self.source.roll_time(time)
@@ -65,6 +68,6 @@ class MidasR:
             scores.append(score)
         return scores
 
-    def run_one(self, edge: Tuple[int, int, int]) -> float:
-        (s, d, t) = edge
-        return self.add(s, d, t)
+    def run_one(self, edge: Tuple[int, int], time: int) -> Tuple[float, float, float]:
+
+        return self.add_all(edge, time)
