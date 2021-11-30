@@ -64,3 +64,7 @@ class MidasR:
             score = self.add((s, d), t)
             scores.append(score)
         return scores
+
+    def run_one(self, edge: Tuple[int, int, int]) -> float:
+        (s, d, t) = edge
+        return self.add(s, d, t)
