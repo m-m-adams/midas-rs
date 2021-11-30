@@ -1,28 +1,27 @@
 import numpy as np
+import torch
 from midas import read_data
+from midas_cores import MidasR
 
 
 class RandomWalkEnvironment():
-    def env_init(self, env_info={}):
+    def env_init(self, edges_path: str, label_path: str, env_info={}):
 
         # set random seed for each run
 
         self.rand_generator = np.random.RandomState(env_info.get("seed"))
         self.edges, self.truth = read_data(
-            "../data/darpa_processed.csv", "../data/darpa_ground_truth.csv")
+            edges_path, label_path)
+        self.midas = MidasR(20, 2048)
 
     def env_start(self):
-        """
-        The first method called when the experiment starts, called before the
-        agent starts.
-
-        Returns:
-            The first state from the environment.
-        """
 
         # set self.reward_state_term tuple
         reward = 0.0
-        state = self.start_state
+
+        nodes = self.edges[0]
+        scores = self.midas(nodes)
+        state = torch.tensor(nodes+scores)
         is_terminal = False
 
         self.reward_state_term = (reward, state, is_terminal)
