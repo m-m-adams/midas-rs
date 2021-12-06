@@ -40,7 +40,6 @@ class MidasEnv():
 
     def step(self, action: int) -> tuple[torch.tensor, torch.tensor, bool]:
         state = [self.state[0].cpu().numpy()*self.decay+action]
-        print(state)
 
         (s, d, t) = self.edges[self.i]
         scores = self.midas.run_one((s, d), t)
@@ -56,9 +55,12 @@ class MidasEnv():
             terminal = False
 
         if action.cpu().numpy() == 0:
+            print(f"chose to miss {self.reward()}")
             reward = 0
         else:
+
             reward = self.reward()
+            print(f'rewarding {action.cpu().numpy()} with {reward}!')
 
         return reward, torch.tensor(self.state), terminal
 

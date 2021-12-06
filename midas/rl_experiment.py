@@ -24,8 +24,7 @@ def run_experiment(environment, agent, env_info, agent_info, experiment_paramete
     actions.append(action)
     for _ in tqdm(range(len(edges)-1)):
         (reward, state, terminal) = environment.step(action)
-        agent.agent_step(reward, state)
-        action = agent.agent_policy(state)
+        action = agent.agent_step(reward, state)
         actions.append(action)
 
     plt.plot(np.array(truth, np.int64)-np.array(actions, np.int64))
@@ -45,7 +44,7 @@ if __name__ == "__main__":
 
     # Environment parameters
     environment_parameters = {
-        "decay": 0.6
+        "decay": 0.99
     }
 
     # Agent parameters

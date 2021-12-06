@@ -52,9 +52,12 @@ class TDAgent():
         for action in self.action_space:
             features = torch.cat((action.unsqueeze(0), state), 0)
             v = self.valuenetwork(features.to(self.device))
+            print(
+                f'valued action {action.detach().cpu().numpy()} as {v.detach().cpu().numpy()}')
             if v > maxv:
                 maxv = v
                 a = action
+
         r = self.policy_rand_generator.uniform(0, 1)
         if r > self.epsilon:
             return a
@@ -87,7 +90,7 @@ class TDAgent():
 
         delta = reward - self.meanR + v - v_last
 
-        self.meanR = self.meanR + self.beta*reward
+        self.meanR = self.meanR + self.beta*delta
 
         #print(v_last, target)
         L = nn.MSELoss()
