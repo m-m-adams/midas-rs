@@ -16,7 +16,7 @@ class MidasEnv():
         self.midas = MidasR(20, 2048)
         self.i = 0
 
-    def env_start(self):
+    def start(self) -> torch.tensor:
 
         # set self.reward_state_term tuple
         reward = 0.0
@@ -38,8 +38,9 @@ class MidasEnv():
         count = self.state[0]
         return max(scores)/count
 
-    def step(self, action: int):
-        state = [self.state[0]*self.decay+action]
+    def step(self, action: int) -> tuple[torch.tensor, torch.tensor, bool]:
+        state = [self.state[0].cpu().numpy()*self.decay+action]
+        print(state)
 
         (s, d, t) = self.edges[self.i]
         scores = self.midas.run_one((s, d), t)
@@ -49,7 +50,17 @@ class MidasEnv():
 
         self.i += 1
 
-        return self.reward(), self.state
+        if self.i == len(self.edges):
+            terminal = True
+        else:
+            terminal = False
+
+        if action.cpu().numpy() == 0:
+            reward = 0
+        else:
+            reward = self.reward()
+
+        return reward, torch.tensor(self.state), terminal
 
 
 class TestEnv(unittest.TestCase):
@@ -78,14 +89,22 @@ class TestEnv(unittest.TestCase):
         self.env.env_start()
         self.env.step(0)
 
-        r, s = self.env.step(1)
+        r, s, t = self.env.step(1)
         self.assertAlmostEqual(r.numpy(), 1)
 
-        r, s = self.env.step(1)
+        r, s, t = self.env.step(1)
         self.assertAlmostEqual(r.numpy(), 1.25)
 
-        r, s = self.env.step(1)
+        r, s, t = self.env.step(1)
         self.assertAlmostEqual(r.numpy(), 1.02, 3)
+
+    def test_end(self):
+        self.env.env_start()
+        self.env.step(0)
+        self.env.i = len(self.env.edges)-1
+        r, s, t = self.env.step(0)
+
+        self.assertEqual(t, True)
 
 
 if __name__ == '__main__':

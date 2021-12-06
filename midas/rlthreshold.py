@@ -7,31 +7,29 @@ import numpy as np
 
 
 class TDAgent():
-    def __init__(self):
-        self.name = "td_agent"
-        pass
 
     class Net(nn.Module):
 
         def __init__(self):
             super().__init__()
-            self.fc1 = nn.Linear(3, 10)
+            self.fc1 = nn.Linear(5, 10)
             self.fc2 = nn.Linear(10, 1)
 
         def forward(self, x):
 
             x = F.relu(self.fc1(x))
             x = self.fc2(x)
+
             return x
 
-    def agent_init(self, agent_info={}):
+    def __init__(self, agent_info={}):
 
         # Set random seed for weights initialization for each run
         self.rand_generator = np.random.RandomState(agent_info.get("seed"))
 
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
-
+        self.device = torch.device("cpu")
         self.valuenetwork = self.Net().to(self.device)
 
         self.optimizer = optim.Adam(
@@ -40,7 +38,6 @@ class TDAgent():
         self.policy_rand_generator = np.random.RandomState(
             agent_info.get("seed"))
 
-        self.gamma = agent_info.get("discount_factor")
         self.beta = agent_info.get("beta_v")
         self.epsilon = agent_info.get("epsilon")
         self.action_space = torch.tensor([0, 1])
@@ -50,7 +47,6 @@ class TDAgent():
 
     def agent_policy(self, state):
 
-        # Set chosen_action as 0 or 1 with equal probability.
         maxv = -np.Inf
         a = self.action_space[0]
         for action in self.action_space:
@@ -81,7 +77,7 @@ class TDAgent():
         self.optimizer.zero_grad()
 
         # add the last action to the feature vector
-        features = features = torch.cat(
+        features = torch.cat(
             (self.last_action.unsqueeze(0), self.last_state), 0)
         v_last = self.valuenetwork(features.to(self.device))
 
@@ -100,12 +96,8 @@ class TDAgent():
         loss.backward()
         self.optimizer.step()
 
-        # update self.last_state and self.last_action (2 lines)
-
-        ### START CODE HERE ###
         self.last_state = state
         self.last_action = a
-        ### END CODE HERE ###
 
         return self.last_action
 
@@ -119,20 +111,3 @@ class TDAgent():
         loss = L(v_last, torch.tensor([[reward]]).to(self.device))
         loss.backward()
         self.optimizer.step()
-
-    def get_state_value(self):
-        with torch.no_grad():
-            state_value = np.zeros(self.num_states)
-            state_action = np.zeros(self.num_states)
-            for state in range(self.num_states):
-                maxv = -np.Inf
-                a = 0
-                for action in self.action_space:
-                    features = torch.cat((action.unsqueeze(0), state), 0)
-                    v = self.valuenetwork(features.to(self.device))
-                    if v > maxv:
-                        maxv = v
-                        a = action
-                state_value[state] = maxv.to("cpu").data.numpy()
-                state_action[state] = a.to("cpu").data.numpy()
-            return state_value, state_action

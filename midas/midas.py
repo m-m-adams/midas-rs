@@ -42,7 +42,7 @@ def read_data(input: str, labels: str) -> Tuple[list[Tuple[int, int, int]], list
 
     with open(labels, 'r') as f:
         next(f)
-        truth = f.readlines()
+        truth = [int(l.strip()) for l in f.readlines()]
     return edges, truth
 
 
