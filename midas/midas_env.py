@@ -6,12 +6,9 @@ from midas_cores import MidasR
 
 
 class MidasEnv():
-    def __init__(self, edges: list[tuple[int, int, int]], env_info={}):
+    def __init__(self, edges: list[tuple[int, int, int]], decay=0.99, seed=0):
 
-        # set random seed for each run
-
-        self.rand_generator = np.random.RandomState(env_info.get("seed"))
-        self.decay = env_info.get("decay")
+        self.decay = decay
         self.edges = edges
         self.midas = MidasR(20, 2048)
         self.i = 0
@@ -25,7 +22,6 @@ class MidasEnv():
         scores = self.midas.run_one((s, d), t)
         state = [0]
         state.extend(scores)
-        state = torch.FloatTensor(state)
         self.is_terminal = False
         self.state = state
         self.i += 1
@@ -39,7 +35,7 @@ class MidasEnv():
         return max(scores)/count
 
     def step(self, action: int) -> tuple[torch.tensor, torch.tensor, bool]:
-        state = [self.state[0].cpu().numpy()*self.decay+action]
+        state = [self.state[0]*self.decay+action]
 
         (s, d, t) = self.edges[self.i]
         scores = self.midas.run_one((s, d), t)
@@ -54,15 +50,14 @@ class MidasEnv():
         else:
             terminal = False
 
-        if action.cpu().numpy() == 0:
-            print(f"chose to miss {self.reward()}")
+        if action == 0:
+
             reward = 0
         else:
-
             reward = self.reward()
-            print(f'rewarding {action.cpu().numpy()} with {reward}!')
 
-        return reward, torch.tensor(self.state), terminal
+        print(f'rewarding {action} with {reward}')
+        return reward, self.state, terminal
 
 
 class TestEnv(unittest.TestCase):

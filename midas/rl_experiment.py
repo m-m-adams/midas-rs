@@ -1,35 +1,55 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
-from rlthreshold import TDAgent
+import torch
+from rlthreshold import DQNAgent
 from midas_env import MidasEnv
 from tqdm import tqdm
 from midas import read_data
 from sklearn.metrics import f1_score
 
 
-def run_experiment(environment, agent, env_info, agent_info, experiment_parameters):
+def run_experiment(environment, agent, env_info, experiment_parameters):
     actions = []
     # one agent setting
+
+    agent = DQNAgent(state_space=(4, 1),
+                     action_space=2,
+                     max_memory_size=30000,
+                     batch_size=32,
+                     gamma=0.90,
+                     lr=0.00025,
+                     dropout=0.2,
+                     exploration_max=1.0,
+                     exploration_min=0.02,
+                     exploration_decay=0.99,
+                     pretrained=False)
     edges, truth = read_data('./data/darpa_processed.csv',
                              './data/darpa_ground_truth.csv')
+    environment = environment(edges)
     edges = edges[:10000]
     truth = truth[:10000]
-
-    environment = environment(edges, env_info)
-    agent = agent(agent_info)
     state = environment.start()
-    agent.agent_start(state)
-    action = agent.agent_policy(state)
-    actions.append(action)
+    state = torch.Tensor([state]).unsqueeze(-1)
     for _ in tqdm(range(len(edges)-1)):
-        (reward, state, terminal) = environment.step(action)
-        action = agent.agent_step(reward, state)
+
+        action = agent.act(state)
+
+        reward, state_next, terminal = environment.step(int(action[0]))
+        state_next = torch.Tensor([state_next]).unsqueeze(-1)
+        reward = torch.tensor([reward]).unsqueeze(0)
+
+        terminal = torch.tensor([int(terminal)]).unsqueeze(0)
+        agent.remember(state, action, reward, state_next, terminal)
+        agent.experience_replay()
+
+        state = state_next
+
         actions.append(action)
 
-    plt.plot(np.array(truth, np.int64)-np.array(actions, np.int64))
+    plt.plot(np.array(truth[:len(actions)], np.int64) -
+             np.array(actions, np.int64))
     plt.show()
-    print(f1_score(truth, actions))
+    print(f1_score(truth[:len(actions)], actions))
     with open('./output.csv', 'w') as f:
         for label, pred in zip(truth, actions):
             f.write(f"{label}, {pred}\n")
@@ -47,18 +67,9 @@ if __name__ == "__main__":
         "decay": 0.99
     }
 
-    # Agent parameters
-    agent_parameters = {
-        "num_hidden_layer": 1,
-        "step_size": 0.01,
-        "beta_m": 0.9,
-        "beta_v": 0.999,
-        "epsilon": 0.01,
-    }
-
     current_env = MidasEnv
-    current_agent = TDAgent
+    current_agent = DQNAgent
 
     # run experiment
-    run_experiment(current_env, current_agent, environment_parameters,
-                   agent_parameters, experiment_parameters)
+    run_experiment(current_env, current_agent,
+                   environment_parameters, experiment_parameters)
