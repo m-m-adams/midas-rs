@@ -32,7 +32,7 @@ class MidasEnv():
     def reward(self) -> float:
         scores = self.state[1:]
         count = self.state[0]
-        return max(scores)/count
+        return max(scores) - (count)
 
     def step(self, action: int) -> tuple[torch.tensor, torch.tensor, bool]:
         state = [self.state[0]*self.decay+action]
@@ -56,7 +56,6 @@ class MidasEnv():
         else:
             reward = self.reward()
 
-        print(f'rewarding {action} with {reward}')
         return reward, self.state, terminal
 
 

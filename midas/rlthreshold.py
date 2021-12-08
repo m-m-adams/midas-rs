@@ -35,7 +35,7 @@ class DQNAgent:
         self.state_space = state_space
         self.action_space = action_space
         self.pretrained = pretrained
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cpu'  # cuda' if torch.cuda.is_available() else 'cpu'
 
         # DQN network
         self.dqn = DQNSolver(state_space, action_space).to(self.device)

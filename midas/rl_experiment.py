@@ -6,10 +6,12 @@ from midas_env import MidasEnv
 from tqdm import tqdm
 from midas import read_data
 from sklearn.metrics import f1_score
+from sklearn.metrics import roc_auc_score
 
 
 def run_experiment(environment, agent, env_info, experiment_parameters):
     actions = []
+    rewards = []
     # one agent setting
 
     agent = DQNAgent(state_space=(4, 1),
@@ -26,8 +28,8 @@ def run_experiment(environment, agent, env_info, experiment_parameters):
     edges, truth = read_data('./data/darpa_processed.csv',
                              './data/darpa_ground_truth.csv')
     environment = environment(edges)
-    edges = edges[:10000]
-    truth = truth[:10000]
+    edges = edges[:1_000_000]
+    truth = truth[:1_000_000]
     state = environment.start()
     state = torch.Tensor([state]).unsqueeze(-1)
     for _ in tqdm(range(len(edges)-1)):
@@ -35,6 +37,7 @@ def run_experiment(environment, agent, env_info, experiment_parameters):
         action = agent.act(state)
 
         reward, state_next, terminal = environment.step(int(action[0]))
+        rewards.append(float(reward))
         state_next = torch.Tensor([state_next]).unsqueeze(-1)
         reward = torch.tensor([reward]).unsqueeze(0)
 
@@ -44,12 +47,14 @@ def run_experiment(environment, agent, env_info, experiment_parameters):
 
         state = state_next
 
-        actions.append(action)
+        actions.append(int(action[0]))
 
     plt.plot(np.array(truth[:len(actions)], np.int64) -
              np.array(actions, np.int64))
     plt.show()
-    print(f1_score(truth[:len(actions)], actions))
+
+    print(f"f1 score is {f1_score(truth[:len(actions)], actions)}")
+    print(f"auroc score is {roc_auc_score(truth[:len(rewards)], rewards)}")
     with open('./output.csv', 'w') as f:
         for label, pred in zip(truth, actions):
             f.write(f"{label}, {pred}\n")
